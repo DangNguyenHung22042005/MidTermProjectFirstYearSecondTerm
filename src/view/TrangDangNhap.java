@@ -20,6 +20,9 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.IconView;
+
+import security.EncryptByMD5;
+
 import java.awt.Font;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -179,8 +182,10 @@ public class TrangDangNhap extends JFrame implements ActionListener, MouseListen
 			int num_column = rstmeta.getColumnCount();
 
 			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
+			
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
-			String matKhauCuoiCung = new String(matKhauNguoiDungNhap);
+			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
+			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
 
 			while (rst.next()) {
 				for (int i = 1; i <= num_column; i++) {
@@ -190,7 +195,7 @@ public class TrangDangNhap extends JFrame implements ActionListener, MouseListen
 						}
 					}
 					if (i == 2) {
-						if (matKhauCuoiCung.equals(rst.getString(i))) {
+						if (matKhauSauKhiMaHoa.equals(rst.getString(i))) {
 							check_mk = true;
 						}
 					}
@@ -219,10 +224,11 @@ public class TrangDangNhap extends JFrame implements ActionListener, MouseListen
 			}
 		} else {
 			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
-			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
-			String matKhauCuoiCung = new String(matKhauNguoiDungNhap);
 			
-			if (tenNguoiDungNhap.equals("") || matKhauCuoiCung.equals("")) {
+			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
+			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
+			
+			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
 			} else {
@@ -238,10 +244,8 @@ public class TrangDangNhap extends JFrame implements ActionListener, MouseListen
 					JOptionPane.showMessageDialog(this, "Sai tên tài khoản hoặc mật khẩu!", "ERROR",
 							JOptionPane.ERROR_MESSAGE);
 				}
-
 			}
 		}
-
 	}
 
 	public void mouseClicked(MouseEvent e) {

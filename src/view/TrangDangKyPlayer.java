@@ -26,6 +26,8 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
+import security.EncryptByMD5;
+
 public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseListener {
 	JTextField textField_tenTaiKhoan;
 	JPasswordField passwordField_matKhau;
@@ -181,22 +183,26 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 	public void InsertData() {
 		try {
 			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
+			
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
-			String matKhauCuoiCung = new String(matKhauNguoiDungNhap);
+			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
+			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
+			
 			char[] matKhauNguoiDungXacNhan = passwordField_xacNhanMatKhau.getPassword();
 			String matKhauXacNhanCuoiCung = new String(matKhauNguoiDungXacNhan);
-			if (tenNguoiDungNhap.equals("") || matKhauCuoiCung.equals("") || matKhauXacNhanCuoiCung.equals("")) {
+			
+			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("") || matKhauXacNhanCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
 			} else if (!radioButton_dieuKhoan.isSelected()) {
 				JOptionPane.showMessageDialog(this, "Vui lòng đồng ý với điều khoản sử dụng để tiếp tục", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
 			} else {
-				if (!matKhauCuoiCung.equals(matKhauXacNhanCuoiCung)) {
+				if (!matKhauNguoiDungNhapCuoiCung.equals(matKhauXacNhanCuoiCung)) {
 					JOptionPane.showMessageDialog(this, "Mật khẩu xác nhận không trùng khớp, Vui lòng kiểm tra lại!",
 							"ERROR", JOptionPane.ERROR_MESSAGE);
 				} else {
-					String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + tenNguoiDungNhap + "', N'" + matKhauCuoiCung + "', " + 0 + ")";
+					String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + tenNguoiDungNhap + "', N'" + matKhauSauKhiMaHoa + "', " + 0 + ")";
 					con.setAutoCommit(false);
 					stm.executeUpdate(sql);
 					con.commit();
