@@ -9,6 +9,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -28,6 +32,10 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
+import infor.BossInfor;
+import infor.LoginInfor;
+import infor.PlayerInfor;
+import infor.ServerSendBackInfor;
 import security.EncryptByMD5;
 
 public class TrangDangNhapPlayer extends JFrame implements ActionListener, MouseListener {
@@ -36,31 +44,19 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 	JButton button_dangNhap;
 	JButton button_dangKy;
 	JToggleButton toggleButton_hideAnShow;
-	boolean check_ten;
-	boolean check_mk;
 	String nameOfPlayer;
 	int scoreOfPlayer;
 	String passwordOfPlayer;
-
-	Connection con;
-	Statement stm;
-	ResultSet rst;
+	Socket loginSocket;
+	private ObjectOutputStream outputStream;
+	private LoginInfor inforOfLoginSend;
+	private Boolean token = false;
 
 	public TrangDangNhapPlayer() {
 		try {
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-
-			String url = "jdbc:sqlserver://HUNG\\SQLEXPRESS:1433;databaseName=TKPLAYER";
-			String userName = "sa";
-			String password = "123456789";
-
-			con = DriverManager.getConnection(url, userName, password);
-			stm = con.createStatement();
-			con.setAutoCommit(false);
-
-			check_ten = false;
-			check_mk = false;
-
+			loginSocket = new Socket("localhost", 2204);
+			listenToServer();
+			
 			setTitle("Đăng nhập");
 			setSize(820, 480);
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -170,50 +166,9 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		LoginAppear();
 	}
 
-	boolean check() {
-		try {
-			ResultSet rst = stm.executeQuery("SELECT *\r\n" + "FROM TAIKHOAN");
-
-			ResultSetMetaData rstmeta = rst.getMetaData();
-			int num_column = rstmeta.getColumnCount();
-
-			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
-			
-			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
-			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
-			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
-
-			while (rst.next()) {
-				for (int i = 1; i <= num_column; i++) {
-					if (i == 1) {
-						if (tenNguoiDungNhap.equals(rst.getString(i))) {
-							check_ten = true;
-						}
-					}
-					if (i == 2) {
-						if (matKhauSauKhiMaHoa.equals(rst.getString(i))) {
-							check_mk = true;
-						}
-					}
-					if (i == 3) {
-						this.scoreOfPlayer = rst.getInt(i);
-					}
-				}
-				if (check_ten && check_mk) {
-					return true;
-				} else {
-					check_ten = false;
-					check_mk = false;
-				}
-			}
-			rst.close();
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
-		return false;
-	}
 
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("Đăng ký")) {
@@ -228,16 +183,26 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 			
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
 			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
-			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
 			
 			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
 			} else {
-				if (check()) {
+				try {
+					inforOfLoginSend = new LoginInfor();
+					inforOfLoginSend.setNameOfPlayer(tenNguoiDungNhap);
+					inforOfLoginSend.setPasswordOfPlayer(matKhauNguoiDungNhapCuoiCung);
+					outputStream = new ObjectOutputStream(loginSocket.getOutputStream());
+					outputStream.writeObject(inforOfLoginSend);
+					outputStream.flush();
+					Thread.sleep(1000);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				if (token) {
 					try {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-						new PlayerView(tenNguoiDungNhap, scoreOfPlayer, matKhauSauKhiMaHoa);
+						new PlayerView(tenNguoiDungNhap, scoreOfPlayer, matKhauNguoiDungNhapCuoiCung);
 					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
@@ -276,5 +241,39 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 
 	public void mouseExited(MouseEvent e) {
 
+	}
+	
+	public void	LoginAppear() {
+		try {
+			inforOfLoginSend = new LoginInfor();
+			outputStream = new ObjectOutputStream(loginSocket.getOutputStream());
+			outputStream.writeObject(inforOfLoginSend);
+			outputStream.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void listenToServer() {
+		new Thread(() -> {
+				try {			
+					while (true) {
+						ObjectInputStream inputStream = new ObjectInputStream(loginSocket.getInputStream());
+						Object receivedData = inputStream.readObject();
+						if (receivedData instanceof ServerSendBackInfor) {
+							ServerSendBackInfor serverInforBack = (ServerSendBackInfor) receivedData;
+							if (serverInforBack.getToken() == true) {
+								scoreOfPlayer = serverInforBack.getScoreOfPlayer();
+								token = true;
+							} else {
+								token = false;
+								System.out.println("Token error, cannot log in now!");
+							}						
+						} 			
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+		}).start();
 	}
 }

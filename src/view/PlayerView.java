@@ -22,7 +22,11 @@ import javax.swing.border.EmptyBorder;
 import controller.ResetPlayerUIListener;
 import infor.BossInfor;
 import infor.PlayerInfor;
+import infor.ScoreUpdateInfor;
 import panel.DrawingPanel;
+import security.EncryptByMD5;
+import server.Server;
+
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
@@ -44,10 +48,7 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 	private int scoreOfPlayer;
 	private JLabel label_Score;
 	private String passwordOfPlayer;
-	
-	Connection con;
-	Statement stm;
-	ResultSet rst;
+	private ScoreUpdateInfor scoreUp10;
 
 	public PlayerView(String nameOfPlayer, int scoreOfPlayer, String passwordOfPlayer) {
 		this.nameOfPlayer = nameOfPlayer;
@@ -55,17 +56,8 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 		this.passwordOfPlayer = passwordOfPlayer;
 		init();
 		try {
-			playerSocket = new Socket("localhost", 1111);
+			playerSocket = new Socket("localhost", 2204);
 			listenToServer();
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-
-			String url = "jdbc:sqlserver://HUNG\\SQLEXPRESS:1433;databaseName=TKPLAYER";
-			String userName = "sa";
-			String password = "123456789";
-
-			con = DriverManager.getConnection(url, userName, password);
-			stm = con.createStatement();
-			con.setAutoCommit(false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -205,12 +197,16 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 				displayCorrectResult();
 				this.scoreOfPlayer += 10;
 				this.label_Score.setText(Integer.toString(scoreOfPlayer));
+				String password = EncryptByMD5.encryptMD5(passwordOfPlayer);
 				
-				String sql = "UPDATE TAIKHOAN SET score = " + this.scoreOfPlayer + " WHERE username = '" + this.nameOfPlayer + "' AND password = '" + this.passwordOfPlayer + "'";
+				scoreUp10 = new ScoreUpdateInfor();
+				scoreUp10.setName(nameOfPlayer);
+				scoreUp10.setPassword(password);
+				scoreUp10.setScore(scoreOfPlayer);
 
-				con.setAutoCommit(false);
-				stm.executeUpdate(sql);
-				con.commit();
+				outputStream = new ObjectOutputStream(playerSocket.getOutputStream());
+				outputStream.writeObject(scoreUp10);
+				outputStream.flush();
 			} else {
 				displayWrongResult();
 			}

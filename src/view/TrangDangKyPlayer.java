@@ -9,6 +9,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,7 +28,9 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-
+import infor.LoginInfor;
+import infor.ServerSendBackInfor;
+import infor.SignupInfor;
 import security.EncryptByMD5;
 
 public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseListener {
@@ -35,21 +40,15 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 	JToggleButton toggleButton_hideAnShow;
 	JRadioButton radioButton_dieuKhoan;
 	JButton button_dangKy;
-
-	Connection con;
-	Statement stm;
+	Socket signupSocket;
+	private SignupInfor inforOfSignupSend;
+	private ObjectOutputStream outputStream;
+	private Boolean token = false;
 
 	public TrangDangKyPlayer() {
 		try {
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-
-			String url = "jdbc:sqlserver://HUNG\\SQLEXPRESS:1433;databaseName=TKPLAYER";
-			String userName = "sa";
-			String password = "123456789";
-
-			con = DriverManager.getConnection(url, userName, password);
-			stm = con.createStatement();
-			con.setAutoCommit(false);
+			signupSocket = new Socket("localhost", 2204);
+			
 			this.setTitle("Đăng ký");
 			this.setSize(510, 607);
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -164,6 +163,7 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		SignupAppear();
 	}
 
 	public void mouseClicked(MouseEvent e) {
@@ -186,7 +186,6 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 			
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
 			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
-			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
 			
 			char[] matKhauNguoiDungXacNhan = passwordField_xacNhanMatKhau.getPassword();
 			String matKhauXacNhanCuoiCung = new String(matKhauNguoiDungXacNhan);
@@ -202,13 +201,20 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 					JOptionPane.showMessageDialog(this, "Mật khẩu xác nhận không trùng khớp, Vui lòng kiểm tra lại!",
 							"ERROR", JOptionPane.ERROR_MESSAGE);
 				} else {
-					String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + tenNguoiDungNhap + "', N'" + matKhauSauKhiMaHoa + "', " + 0 + ")";
-					con.setAutoCommit(false);
-					stm.executeUpdate(sql);
-					con.commit();
-					JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công!", "COMPLETE",
-							JOptionPane.INFORMATION_MESSAGE);
-					this.dispose();
+					try {
+						inforOfSignupSend = new SignupInfor();
+						inforOfSignupSend.setName(tenNguoiDungNhap);
+						inforOfSignupSend.setPassword(matKhauNguoiDungNhapCuoiCung);
+						outputStream = new ObjectOutputStream(signupSocket.getOutputStream());
+						outputStream.writeObject(inforOfSignupSend);
+						outputStream.flush();
+						Thread.sleep(1000);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+						JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công!", "COMPLETE",
+								JOptionPane.INFORMATION_MESSAGE);
+						this.dispose();
 				}
 			}
 		} catch (Exception e) {
@@ -231,5 +237,16 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 
 	public void mouseExited(MouseEvent e) {
 
+	}
+	
+	public void	SignupAppear() {
+		try {
+			inforOfSignupSend = new SignupInfor();
+			outputStream = new ObjectOutputStream(signupSocket.getOutputStream());
+			outputStream.writeObject(inforOfSignupSend);
+			outputStream.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
