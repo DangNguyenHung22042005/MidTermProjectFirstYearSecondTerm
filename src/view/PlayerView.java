@@ -13,7 +13,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -26,10 +25,10 @@ import infor.ScoreUpdateInfor;
 import panel.DrawingPanel;
 import security.EncryptByMD5;
 import server.Server;
-
+import xml.CreateXMLFileForPlayer;
+import xml.Player;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-
 import java.awt.Color;
 import javax.swing.Box;
 import javax.swing.SwingConstants;

@@ -24,6 +24,8 @@ import infor.ServerSendBackInfor;
 import infor.SignupInfor;
 import panel.DrawingPanel;
 import security.EncryptByMD5;
+import xml.CreateXMLFileForPlayer;
+import xml.Player;
 
 public class Server implements Runnable {
 	private ServerSocket serverSocket;
@@ -127,6 +129,18 @@ public class Server implements Runnable {
 					if (receivedDataPlayer instanceof ScoreUpdateInfor) {
 						ScoreUpdateInfor newScore = (ScoreUpdateInfor)receivedDataPlayer;
 						UpdateScoreDatabase(newScore.getScore(), newScore.getName(), newScore.getPassword());
+						
+						for (Player p : CreateXMLFileForPlayer._listPlayers) {
+							System.out.println("Bắt đầu kiểm tra đối tượng " + p.getName() + " để tiến hành cập nhật điểm vào file xml!");
+							System.out.println(p.getName()+ "-" + newScore.getName() + " " + Integer.parseInt(p.getScore()) + "-" + (newScore.getScore() - 10));
+							if ((p.getName().equals(newScore.getName())) && (Integer.parseInt(p.getScore()) == (newScore.getScore() - 10))) {
+								Player newPlayer = new Player(String.valueOf(p.getNumber()), p.getName(), String.valueOf(newScore.getScore()));
+								CreateXMLFileForPlayer._listPlayers.remove(p);
+								CreateXMLFileForPlayer.addPlayer(newPlayer);
+								CreateXMLFileForPlayer.CallXMLForPlayer();
+								return;
+							}
+						}
 					} else {
 						for (Socket boss : listBoss) {
 							ObjectOutputStream bossOutputStream = new ObjectOutputStream(boss.getOutputStream());
@@ -175,6 +189,10 @@ public class Server implements Runnable {
 							check_mk = false;
 							verify.setToken(true);
 							verify.setScoreOfPlayer(scoreOfPlayer);
+							
+							Player newPlayer = new Player(String.valueOf(countPlayer), nameOfPlayer, String.valueOf(scoreOfPlayer));
+							CreateXMLFileForPlayer.addPlayer(newPlayer);
+							CreateXMLFileForPlayer.CallXMLForPlayer();
 						} 
 						ObjectOutputStream loginOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						loginOutputStream.writeObject(verify);
