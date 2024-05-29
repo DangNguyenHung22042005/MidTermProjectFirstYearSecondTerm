@@ -196,11 +196,10 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 				displayCorrectResult();
 				this.scoreOfPlayer += 10;
 				this.label_Score.setText(Integer.toString(scoreOfPlayer));
-				String password = EncryptByMD5.encryptMD5(passwordOfPlayer);
 				
 				scoreUp10 = new ScoreUpdateInfor();
 				scoreUp10.setName(nameOfPlayer);
-				scoreUp10.setPassword(password);
+				scoreUp10.setPassword(passwordOfPlayer);
 				scoreUp10.setScore(scoreOfPlayer);
 
 				outputStream = new ObjectOutputStream(playerSocket.getOutputStream());

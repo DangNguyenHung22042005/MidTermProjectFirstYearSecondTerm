@@ -236,7 +236,6 @@ public class Server implements Runnable {
 			String tenNguoiDungNhap = nameOfPlayer;
 			
 			String matKhauNguoiDungNhapCuoiCung = passwordOfPlayer;
-			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
 
 			while (rst.next()) {
 				for (int i = 1; i <= num_column; i++) {
@@ -246,7 +245,7 @@ public class Server implements Runnable {
 						}
 					}
 					if (i == 2) {
-						if (matKhauSauKhiMaHoa.equals(rst.getString(i))) {
+						if (matKhauNguoiDungNhapCuoiCung.equals(rst.getString(i))) {
 							check_mk = true;
 						}
 					}
@@ -281,8 +280,7 @@ public class Server implements Runnable {
 	
 	private void CreateAccount(String name, String password) {
 		try {
-			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(password);
-			String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + name + "', N'" + matKhauSauKhiMaHoa + "', " + 0 + ")";
+			String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + name + "', N'" + password + "', " + 0 + ")";
 			con.setAutoCommit(false);
 			stm.executeUpdate(sql);
 			con.commit();

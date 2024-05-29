@@ -190,6 +190,8 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 			char[] matKhauNguoiDungXacNhan = passwordField_xacNhanMatKhau.getPassword();
 			String matKhauXacNhanCuoiCung = new String(matKhauNguoiDungXacNhan);
 			
+			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
+			
 			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("") || matKhauXacNhanCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
@@ -204,7 +206,7 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 					try {
 						inforOfSignupSend = new SignupInfor();
 						inforOfSignupSend.setName(tenNguoiDungNhap);
-						inforOfSignupSend.setPassword(matKhauNguoiDungNhapCuoiCung);
+						inforOfSignupSend.setPassword(matKhauSauKhiMaHoa);
 						outputStream = new ObjectOutputStream(signupSocket.getOutputStream());
 						outputStream.writeObject(inforOfSignupSend);
 						outputStream.flush();

@@ -184,6 +184,8 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
 			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
 			
+			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
+			
 			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
@@ -191,7 +193,7 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 				try {
 					inforOfLoginSend = new LoginInfor();
 					inforOfLoginSend.setNameOfPlayer(tenNguoiDungNhap);
-					inforOfLoginSend.setPasswordOfPlayer(matKhauNguoiDungNhapCuoiCung);
+					inforOfLoginSend.setPasswordOfPlayer(matKhauSauKhiMaHoa);
 					outputStream = new ObjectOutputStream(loginSocket.getOutputStream());
 					outputStream.writeObject(inforOfLoginSend);
 					outputStream.flush();
@@ -202,7 +204,7 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 				if (token) {
 					try {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-						new PlayerView(tenNguoiDungNhap, scoreOfPlayer, matKhauNguoiDungNhapCuoiCung);
+						new PlayerView(tenNguoiDungNhap, scoreOfPlayer, matKhauSauKhiMaHoa);
 					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
