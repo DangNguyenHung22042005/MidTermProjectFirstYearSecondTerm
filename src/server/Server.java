@@ -138,10 +138,10 @@ public class Server implements Runnable {
 								CreateXMLFileForPlayer._listPlayers.remove(p);
 								CreateXMLFileForPlayer.addPlayer(newPlayer);
 								CreateXMLFileForPlayer.CallXMLForPlayer();
-								return;
+								break;
 							}
 						}
-					} else {
+					} else if (receivedDataPlayer instanceof PlayerInfor) {
 						for (Socket boss : listBoss) {
 							ObjectOutputStream bossOutputStream = new ObjectOutputStream(boss.getOutputStream());
 							bossOutputStream.writeObject(receivedDataPlayer);

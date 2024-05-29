@@ -54,7 +54,7 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 
 	public TrangDangNhapPlayer() {
 		try {
-			loginSocket = new Socket("localhost", 2204);
+			loginSocket = new Socket("192.168.227.10", 2204);
 			listenToServer();
 			
 			setTitle("Đăng nhập");

@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <guessgame>
    <player number="0">
-      <name>player</name>
+      <name>bb</name>
       <peak>
-         <score>160</score>
-      </peak>
-   </player>
-   <player number="2">
-      <name>xinchao</name>
-      <peak>
-         <score>20</score>
-      </peak>
-   </player>
-   <player number="1">
-      <name>tvt</name>
-      <peak>
-         <score>100</score>
+         <score>50</score>
       </peak>
    </player>
 </guessgame>

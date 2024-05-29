@@ -55,7 +55,7 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 		this.passwordOfPlayer = passwordOfPlayer;
 		init();
 		try {
-			playerSocket = new Socket("localhost", 2204);
+			playerSocket = new Socket("192.168.227.10", 2204);
 			listenToServer();
 		} catch (Exception e) {
 			e.printStackTrace();

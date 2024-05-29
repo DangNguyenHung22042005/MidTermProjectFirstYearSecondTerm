@@ -47,7 +47,7 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 
 	public TrangDangKyPlayer() {
 		try {
-			signupSocket = new Socket("localhost", 2204);
+			signupSocket = new Socket("192.168.227.10", 2204);
 			
 			this.setTitle("Đăng ký");
 			this.setSize(510, 607);

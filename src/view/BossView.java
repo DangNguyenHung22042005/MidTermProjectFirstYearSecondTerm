@@ -38,7 +38,7 @@ public class BossView extends JFrame implements ActionListener {
 		this.nameOfBoss = nameOfBoss;
 		init();
 		try {
-			bossSocket = new Socket("localhost", 2204);
+			bossSocket = new Socket("192.168.227.10", 2204);
 			listenToServer();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -187,12 +187,30 @@ public class BossView extends JFrame implements ActionListener {
 						ObjectInputStream inputStream = new ObjectInputStream(bossSocket.getInputStream());
 						Object receivedData = inputStream.readObject();
 						if (receivedData instanceof PlayerInfor) {
+							System.out.println("Player send!");
 							PlayerInfor player = (PlayerInfor) receivedData;
+							System.out.println(player.getAnswerOfPlayer());
 							if (player.getAnswerOfPlayer().equals(textField_Answer.getText())) {
 								System.out.println("Người dùng nào đó đã đoán đúng đáp án!");
+								
+								ResetAll();
+								
+								try {
+									inforOfBossSend = new BossInfor();
+									inforOfBossSend.setCorrectAnswer(this.textField_Answer.getText());
+									inforOfBossSend.setLines(this.drawing.getLines());
+
+									outputStream = new ObjectOutputStream(bossSocket.getOutputStream());
+									outputStream.writeObject(inforOfBossSend);
+									outputStream.flush();
+								} catch (Exception e1) {
+									e1.printStackTrace();
+								}
+								
 								JOptionPane.showMessageDialog(this,
 										"Đã có người chơi đoán đúng đáp án",
 										"CORRECT ANSWER", JOptionPane.INFORMATION_MESSAGE);
+								
 							} else {
 								System.out.println("Người dùng nào đó đã đoán sai đáp án!");
 							}
@@ -202,14 +220,5 @@ public class BossView extends JFrame implements ActionListener {
 					e.printStackTrace();
 				}
 		}).start();
-	}
-
-	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			new BossView("Mr.Bo...!!!");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 }
