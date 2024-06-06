@@ -38,7 +38,7 @@ public class BossView extends JFrame implements ActionListener {
 		this.nameOfBoss = nameOfBoss;
 		init();
 		try {
-			bossSocket = new Socket("192.168.227.10", 2204);
+			bossSocket = new Socket("localhost", 2204);
 			listenToServer();
 		} catch (Exception e) {
 			e.printStackTrace();

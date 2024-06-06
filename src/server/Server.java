@@ -7,6 +7,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -15,6 +17,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.JOptionPane;
 import infor.BossInfor;
 import infor.LoginInfor;
@@ -23,7 +28,9 @@ import infor.ScoreUpdateInfor;
 import infor.ServerSendBackInfor;
 import infor.SignupInfor;
 import panel.DrawingPanel;
+import security.DivideNameAndPassword;
 import security.EncryptByMD5;
+import security.SecurityByAES;
 import xml.CreateXMLFileForPlayer;
 import xml.Player;
 
@@ -48,7 +55,7 @@ public class Server implements Runnable {
 	String passwordOfPlayer = "";
 	int scoreOfPlayer = 0;
 	private ServerSendBackInfor verify;
-	
+
 	Connection con;
 	Statement stm;
 	ResultSet rst;
@@ -56,9 +63,9 @@ public class Server implements Runnable {
 	public Server() {
 		try {
 			serverSocket = new ServerSocket(2204);
-			
+
 			System.out.println("Port 1111 can be connect by client!");
-			
+
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
 			String url = "jdbc:sqlserver://HUNG\\SQLEXPRESS:1433;databaseName=TKPLAYER";
@@ -127,14 +134,18 @@ public class Server implements Runnable {
 					ObjectInputStream inputStreamPlayer = new ObjectInputStream(clientSocket.getInputStream());
 					Object receivedDataPlayer = inputStreamPlayer.readObject();
 					if (receivedDataPlayer instanceof ScoreUpdateInfor) {
-						ScoreUpdateInfor newScore = (ScoreUpdateInfor)receivedDataPlayer;
+						ScoreUpdateInfor newScore = (ScoreUpdateInfor) receivedDataPlayer;
 						UpdateScoreDatabase(newScore.getScore(), newScore.getName(), newScore.getPassword());
-						
+
 						for (Player p : CreateXMLFileForPlayer._listPlayers) {
-							System.out.println("Bắt đầu kiểm tra đối tượng " + p.getName() + " để tiến hành cập nhật điểm vào file xml!");
-							System.out.println(p.getName()+ "-" + newScore.getName() + " " + Integer.parseInt(p.getScore()) + "-" + (newScore.getScore() - 10));
-							if ((p.getName().equals(newScore.getName())) && (Integer.parseInt(p.getScore()) == (newScore.getScore() - 10))) {
-								Player newPlayer = new Player(String.valueOf(p.getNumber()), p.getName(), String.valueOf(newScore.getScore()));
+							System.out.println("Bắt đầu kiểm tra đối tượng " + p.getName()
+									+ " để tiến hành cập nhật điểm vào file xml!");
+							System.out.println(p.getName() + "-" + newScore.getName() + " "
+									+ Integer.parseInt(p.getScore()) + "-" + (newScore.getScore() - 10));
+							if ((p.getName().equals(newScore.getName()))
+									&& (Integer.parseInt(p.getScore()) == (newScore.getScore() - 10))) {
+								Player newPlayer = new Player(String.valueOf(p.getNumber()), p.getName(),
+										String.valueOf(newScore.getScore()));
 								CreateXMLFileForPlayer._listPlayers.remove(p);
 								CreateXMLFileForPlayer.addPlayer(newPlayer);
 								CreateXMLFileForPlayer.CallXMLForPlayer();
@@ -172,7 +183,7 @@ public class Server implements Runnable {
 			}
 		}).start();
 	}
-	
+
 	private void handleLogin(Socket clientSocket) {
 		new Thread(() -> {
 			try {
@@ -181,19 +192,42 @@ public class Server implements Runnable {
 					Object receivedDataLogin = inputStreamLogin.readObject();
 					if (receivedDataLogin instanceof LoginInfor) {
 						LoginInfor login = (LoginInfor) receivedDataLogin;
-						nameOfPlayer = login.getNameOfPlayer();
-						passwordOfPlayer = login.getPasswordOfPlayer();
+
+						System.out.println(login.getEncryptNameAndPassword());
+						
+						
+						String matKhauVaTenSauMaHoa = null;
+						
+						try {
+							matKhauVaTenSauMaHoa = SecurityByAES.DecryptAES(login.getEncryptNameAndPassword());
+						} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+							| BadPaddingException e1) {
+						e1.printStackTrace();
+						}
+						
+						System.out.println(matKhauVaTenSauMaHoa);
+
+						String[] tenVaMatKhauDaDuocPhanTach = DivideNameAndPassword.NameAndPassword(matKhauVaTenSauMaHoa);
+						
+						System.out.println(tenVaMatKhauDaDuocPhanTach[0] + " " + tenVaMatKhauDaDuocPhanTach[1]);
+
+						nameOfPlayer = tenVaMatKhauDaDuocPhanTach[0];
+						passwordOfPlayer = tenVaMatKhauDaDuocPhanTach[1];
+						
+						System.out.println(nameOfPlayer + " " + passwordOfPlayer);
+
 						verify = new ServerSendBackInfor();
 						if (check()) {
 							check_ten = false;
 							check_mk = false;
 							verify.setToken(true);
 							verify.setScoreOfPlayer(scoreOfPlayer);
-							
-							Player newPlayer = new Player(String.valueOf(countPlayer), nameOfPlayer, String.valueOf(scoreOfPlayer));
+
+							Player newPlayer = new Player(String.valueOf(countPlayer), nameOfPlayer,
+									String.valueOf(scoreOfPlayer));
 							CreateXMLFileForPlayer.addPlayer(newPlayer);
 							CreateXMLFileForPlayer.CallXMLForPlayer();
-						} 
+						}
 						ObjectOutputStream loginOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						loginOutputStream.writeObject(verify);
 						loginOutputStream.flush();
@@ -206,7 +240,7 @@ public class Server implements Runnable {
 			}
 		}).start();
 	}
-	
+
 	private void handleSignup(Socket clientSocket) {
 		new Thread(() -> {
 			try {
@@ -215,8 +249,19 @@ public class Server implements Runnable {
 					Object receivedDataLogin = inputStreamLogin.readObject();
 					if (receivedDataLogin instanceof SignupInfor) {
 						SignupInfor signupIF = (SignupInfor) receivedDataLogin;
-						String name = signupIF.getName();
-						String password = signupIF.getPassword();
+
+						String matKhauVaTenSauMaHoa = null;
+						try {
+							matKhauVaTenSauMaHoa = SecurityByAES.DecryptAES(signupIF.getEncryptNameAndPassword());
+						} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+							| BadPaddingException e1) {
+						e1.printStackTrace();
+						}
+						
+						String[] tenVaMatKhauDaDuocPhanTach = DivideNameAndPassword.NameAndPassword(matKhauVaTenSauMaHoa);
+
+						String name = tenVaMatKhauDaDuocPhanTach[0];
+						String password = tenVaMatKhauDaDuocPhanTach[1];
 						CreateAccount(name, password);
 					}
 				}
@@ -225,7 +270,7 @@ public class Server implements Runnable {
 			}
 		}).start();
 	}
-	
+
 	boolean check() {
 		try {
 			ResultSet rst = stm.executeQuery("SELECT *\r\n" + "FROM TAIKHOAN");
@@ -234,7 +279,7 @@ public class Server implements Runnable {
 			int num_column = rstmeta.getColumnCount();
 
 			String tenNguoiDungNhap = nameOfPlayer;
-			
+
 			String matKhauNguoiDungNhapCuoiCung = passwordOfPlayer;
 
 			while (rst.next()) {
@@ -266,10 +311,11 @@ public class Server implements Runnable {
 		}
 		return false;
 	}
-	
+
 	private void UpdateScoreDatabase(int score, String name, String password) {
 		try {
-			String sql = "UPDATE TAIKHOAN SET score = " + score + " WHERE username = '" + name + "' AND password = '" + password + "'";
+			String sql = "UPDATE TAIKHOAN SET score = " + score + " WHERE username = '" + name + "' AND password = '"
+					+ password + "'";
 			con.setAutoCommit(false);
 			stm.executeUpdate(sql);
 			con.commit();
@@ -277,8 +323,9 @@ public class Server implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void CreateAccount(String name, String password) {
+		System.out.println(name + " " + password);
 		try {
 			String sql = "INSERT INTO TAIKHOAN " + "VALUES (N'" + name + "', N'" + password + "', " + 0 + ")";
 			con.setAutoCommit(false);

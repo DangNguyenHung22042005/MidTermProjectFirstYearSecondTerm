@@ -13,9 +13,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.URL;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,6 +38,7 @@ import infor.LoginInfor;
 import infor.ServerSendBackInfor;
 import infor.SignupInfor;
 import security.EncryptByMD5;
+import security.SecurityByAES;
 
 public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseListener {
 	JTextField textField_tenTaiKhoan;
@@ -47,8 +54,8 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 
 	public TrangDangKyPlayer() {
 		try {
-			signupSocket = new Socket("192.168.227.10", 2204);
-			
+			signupSocket = new Socket("localhost", 2204);
+
 			this.setTitle("Đăng ký");
 			this.setSize(510, 607);
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -149,7 +156,7 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 			label_nenVang.setBackground(Color.YELLOW);
 			label_nenVang.setBounds(0, 0, 496, 435);
 			panel_main.add(label_nenVang);
-			
+
 			JLabel lblRegistrationPlayer = new JLabel("REGISTRATION PLAYER");
 			lblRegistrationPlayer.setForeground(Color.GREEN);
 			lblRegistrationPlayer.setBackground(Color.YELLOW);
@@ -183,16 +190,38 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 	public void InsertData() {
 		try {
 			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
-			
+
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
 			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
-			
+
 			char[] matKhauNguoiDungXacNhan = passwordField_xacNhanMatKhau.getPassword();
 			String matKhauXacNhanCuoiCung = new String(matKhauNguoiDungXacNhan);
-			
+
 			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
+
+			String matKhauDaMaHoaVaTen = matKhauSauKhiMaHoa + "|" + tenNguoiDungNhap;
+			System.out.println(matKhauDaMaHoaVaTen);
 			
-			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("") || matKhauXacNhanCuoiCung.equals("")) {
+
+			String chuoiTongHopMaHoaHaiChieu = null;
+
+			try {
+				chuoiTongHopMaHoaHaiChieu = SecurityByAES.EncryptAES(matKhauDaMaHoaVaTen);
+
+			} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+					| BadPaddingException e1) {
+				e1.printStackTrace();
+			}
+			
+			if (chuoiTongHopMaHoaHaiChieu != null) {
+				System.out.println("Mã hóa 2 chiều thành công, chuỗi mã hóa đây:");
+				System.out.println(chuoiTongHopMaHoaHaiChieu);
+			} else {
+				System.out.println("Mã hóa 2 chiều khi đăng ký thất bại!");
+			}
+
+			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("")
+					|| matKhauXacNhanCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
 						JOptionPane.ERROR_MESSAGE);
 			} else if (!radioButton_dieuKhoan.isSelected()) {
@@ -205,8 +234,7 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 				} else {
 					try {
 						inforOfSignupSend = new SignupInfor();
-						inforOfSignupSend.setName(tenNguoiDungNhap);
-						inforOfSignupSend.setPassword(matKhauSauKhiMaHoa);
+						inforOfSignupSend.setEncryptNameAndPassword(chuoiTongHopMaHoaHaiChieu);
 						outputStream = new ObjectOutputStream(signupSocket.getOutputStream());
 						outputStream.writeObject(inforOfSignupSend);
 						outputStream.flush();
@@ -214,13 +242,14 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 					} catch (Exception e1) {
 						e1.printStackTrace();
 					}
-						JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công!", "COMPLETE",
-								JOptionPane.INFORMATION_MESSAGE);
-						this.dispose();
+					JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công!", "COMPLETE",
+							JOptionPane.INFORMATION_MESSAGE);
+					this.dispose();
 				}
 			}
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, "Tên tài khoản và mật khẩu này đã được đăng ký trước đó, Bạn có thể dùng nó để đăng nhập!", "ERROR",
+			JOptionPane.showMessageDialog(this,
+					"Tên tài khoản và mật khẩu này đã được đăng ký trước đó, Bạn có thể dùng nó để đăng nhập!", "ERROR",
 					JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -240,8 +269,8 @@ public class TrangDangKyPlayer extends JFrame implements ActionListener, MouseLi
 	public void mouseExited(MouseEvent e) {
 
 	}
-	
-	public void	SignupAppear() {
+
+	public void SignupAppear() {
 		try {
 			inforOfSignupSend = new SignupInfor();
 			outputStream = new ObjectOutputStream(signupSocket.getOutputStream());

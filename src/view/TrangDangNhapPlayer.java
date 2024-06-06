@@ -14,11 +14,17 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.URL;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -37,6 +43,7 @@ import infor.LoginInfor;
 import infor.PlayerInfor;
 import infor.ServerSendBackInfor;
 import security.EncryptByMD5;
+import security.SecurityByAES;
 
 public class TrangDangNhapPlayer extends JFrame implements ActionListener, MouseListener {
 	JTextField textField_tenTaiKhoan;
@@ -54,7 +61,7 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 
 	public TrangDangNhapPlayer() {
 		try {
-			loginSocket = new Socket("192.168.227.10", 2204);
+			loginSocket = new Socket("localhost", 2204);
 			listenToServer();
 			
 			setTitle("Đăng nhập");
@@ -180,11 +187,24 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 			}
 		} else {
 			String tenNguoiDungNhap = textField_tenTaiKhoan.getText();
-			
+					
 			char[] matKhauNguoiDungNhap = passwordField_matKhau.getPassword();
+			
 			String matKhauNguoiDungNhapCuoiCung = new String(matKhauNguoiDungNhap);
 			
 			String matKhauSauKhiMaHoa = EncryptByMD5.encryptMD5(matKhauNguoiDungNhapCuoiCung);
+			
+			String matKhauDaMaHoaVaTen = matKhauSauKhiMaHoa + "|" + tenNguoiDungNhap;
+			
+			String chuoiTongHopMaHoaHaiChieu = null;
+			
+			try {
+				chuoiTongHopMaHoaHaiChieu = SecurityByAES.EncryptAES(matKhauDaMaHoaVaTen);
+				
+			} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+					| BadPaddingException e1) {
+				e1.printStackTrace();
+			}
 			
 			if (tenNguoiDungNhap.equals("") || matKhauNguoiDungNhapCuoiCung.equals("")) {
 				JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "ERROR",
@@ -192,8 +212,13 @@ public class TrangDangNhapPlayer extends JFrame implements ActionListener, Mouse
 			} else {
 				try {
 					inforOfLoginSend = new LoginInfor();
-					inforOfLoginSend.setNameOfPlayer(tenNguoiDungNhap);
-					inforOfLoginSend.setPasswordOfPlayer(matKhauSauKhiMaHoa);
+					if (chuoiTongHopMaHoaHaiChieu != null) {
+						System.out.println("Mã hóa 2 chiều thành công! chuỗi đã được mã hóa có dạng như sau:");
+						System.out.println(chuoiTongHopMaHoaHaiChieu);
+					} else {
+						System.out.println("Mã hóa 2 chiều không thành công!");
+					}
+					inforOfLoginSend.setEncryptNameAndPassword(chuoiTongHopMaHoaHaiChieu);
 					outputStream = new ObjectOutputStream(loginSocket.getOutputStream());
 					outputStream.writeObject(inforOfLoginSend);
 					outputStream.flush();
