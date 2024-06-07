@@ -222,6 +222,8 @@ public class PlayerView extends JFrame implements ActionListener, FocusListener 
 						if (receivedData instanceof BossInfor) {
 							BossInfor boss = (BossInfor) receivedData;
 							this.drawing.setLines(boss.getLines());
+							this.drawing.setCurrentColor(boss.getCurrentColor());
+							this.drawing.setCurrentStrokeSize(boss.getCurrentStrokeSize());
 							drawing.repaint();
 							this.correctAnswerOfBossSend = boss.getCorrectAnswer();
 						} 			

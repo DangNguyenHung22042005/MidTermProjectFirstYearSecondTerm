@@ -22,9 +22,12 @@ import javax.swing.border.TitledBorder;
 
 import controller.ResetBossUIListener;
 import controller.ResetPlayerUIListener;
+import controller.UpdateColorBossUIListener;
+import controller.UpdateSizeBossUIListener;
 import infor.BossInfor;
 import infor.PlayerInfor;
 import panel.DrawingPanel;
+import javax.swing.JComboBox;
 
 public class BossView extends JFrame implements ActionListener {
 	private JTextField textField_Answer;
@@ -33,7 +36,13 @@ public class BossView extends JFrame implements ActionListener {
 	private BossInfor inforOfBossSend;
 	private ObjectOutputStream outputStream;
 	private String nameOfBoss;
-	
+	private JComboBox<String> comboBox_Color;
+	private JComboBox comboBox_Size;
+	private Color[] colors;
+	private String[] colorNames;
+	private Color currentColor;
+	private float currentSize;
+
 	public BossView(String nameOfBoss) {
 		this.nameOfBoss = nameOfBoss;
 		init();
@@ -45,12 +54,14 @@ public class BossView extends JFrame implements ActionListener {
 		}
 		BossAppear();
 	}
-	
+
 	public void init() {
 		ResetBossUIListener listen = new ResetBossUIListener(this);
+		UpdateColorBossUIListener updateColor = new UpdateColorBossUIListener(this);
+		UpdateSizeBossUIListener updateSize = new UpdateSizeBossUIListener(this);
 
 		this.setTitle("Boss Room");
-		this.setSize(660, 400);
+		this.setSize(900, 400);
 		this.setLocationRelativeTo(null);
 		getContentPane().setLayout(null);
 
@@ -89,10 +100,10 @@ public class BossView extends JFrame implements ActionListener {
 
 		JPanel panel_Infor = new JPanel();
 		panel_Infor.setBackground(new Color(0, 0, 0));
-		panel_Infor.setBounds(420, 0, 226, 363);
+		panel_Infor.setBounds(420, 0, 466, 363);
 		getContentPane().add(panel_Infor);
 		panel_Infor.setLayout(null);
-		
+
 		JLabel label_Title = new JLabel("BATTLE GUESS");
 		label_Title.setBackground(new Color(255, 255, 0));
 		label_Title.setFont(new Font("Tahoma", Font.BOLD, 20));
@@ -102,7 +113,7 @@ public class BossView extends JFrame implements ActionListener {
 		label_Title.setBounds(10, 10, 206, 75);
 		label_Title.setOpaque(true);
 		panel_Infor.add(label_Title);
-		
+
 		JLabel label_Name = new JLabel(this.nameOfBoss);
 		label_Name.setBackground(Color.YELLOW);
 		label_Name.setForeground(Color.RED);
@@ -111,12 +122,14 @@ public class BossView extends JFrame implements ActionListener {
 		label_Name.setBounds(22, 104, 180, 75);
 		label_Name.setOpaque(true);
 		panel_Infor.add(label_Name);
-		
+
 		Box verticalBox_Name = Box.createVerticalBox();
 		verticalBox_Name.setBounds(10, 87, 206, 105);
 		panel_Infor.add(verticalBox_Name);
-		verticalBox_Name.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "NAME", TitledBorder.CENTER, TitledBorder.TOP, null, Color.GREEN));
-		
+		verticalBox_Name.setBorder(new TitledBorder(
+				new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "NAME",
+				TitledBorder.CENTER, TitledBorder.TOP, null, Color.GREEN));
+
 		JLabel label_Score = new JLabel("1111");
 		label_Score.setOpaque(true);
 		label_Score.setHorizontalAlignment(SwingConstants.CENTER);
@@ -125,12 +138,14 @@ public class BossView extends JFrame implements ActionListener {
 		label_Score.setBackground(Color.YELLOW);
 		label_Score.setBounds(22, 213, 180, 36);
 		panel_Infor.add(label_Score);
-		
+
 		Box verticalBox_KeyRoom = Box.createVerticalBox();
 		verticalBox_KeyRoom.setBounds(10, 196, 206, 63);
 		panel_Infor.add(verticalBox_KeyRoom);
-		verticalBox_KeyRoom.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "KEY ROOM", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 255, 0)));
-		
+		verticalBox_KeyRoom.setBorder(new TitledBorder(
+				new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "KEY ROOM",
+				TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 255, 0)));
+
 		JLabel lblNewLabel = new JLabel("YOU ARE BOSS");
 		lblNewLabel.setBackground(Color.YELLOW);
 		lblNewLabel.setForeground(Color.GREEN);
@@ -139,16 +154,60 @@ public class BossView extends JFrame implements ActionListener {
 		lblNewLabel.setBounds(10, 269, 206, 84);
 		lblNewLabel.setOpaque(true);
 		panel_Infor.add(lblNewLabel);
-		
+
 		JLabel label_Background = new JLabel("");
 		label_Background.setOpaque(true);
 		label_Background.setBackground(Color.YELLOW);
 		label_Background.setBounds(0, 0, 646, 363);
-		getContentPane().add(label_Background);	
-		
+		getContentPane().add(label_Background);
+
+		this.colors = new Color[] { Color.BLACK, Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.CYAN,
+				Color.DARK_GRAY, Color.GRAY, Color.LIGHT_GRAY, Color.MAGENTA, Color.ORANGE, Color.PINK, Color.WHITE };
+
+		this.colorNames = new String[] { "Black", "Red", "Blue", "Green", "Yellow", "Cyan", "Dark Gray", "Gray",
+				"Light Gray", "Magenta", "Orange", "Pink", "White" };
+
+		comboBox_Color = new JComboBox<>(colorNames);
+		comboBox_Color.setForeground(Color.BLACK);
+		comboBox_Color.setFont(new Font("Tahoma", Font.BOLD, 40));
+		comboBox_Color.setBounds(239, 73, 206, 92);
+		comboBox_Color.addActionListener(updateColor);
+		panel_Infor.add(comboBox_Color);
+
+		comboBox_Size = new JComboBox();
+		comboBox_Size.setForeground(Color.BLACK);
+		comboBox_Size.setFont(new Font("Tahoma", Font.BOLD, 40));
+		comboBox_Size.setBounds(239, 247, 206, 92);
+		comboBox_Size.addActionListener(updateSize);
+		panel_Infor.add(comboBox_Size);
+
+		for (float i = 1; i <= 20; i++) {
+			comboBox_Size.addItem(i);
+		}
+
+		JLabel lblColor = new JLabel("COLOR");
+		lblColor.setForeground(Color.RED);
+		lblColor.setFont(new Font("Tahoma", Font.BOLD, 40));
+		lblColor.setVerticalAlignment(SwingConstants.TOP);
+		lblColor.setHorizontalAlignment(SwingConstants.CENTER);
+		lblColor.setOpaque(true);
+		lblColor.setBackground(Color.YELLOW);
+		lblColor.setBounds(226, 10, 230, 169);
+		panel_Infor.add(lblColor);
+
+		JLabel label_Size = new JLabel("SIZE");
+		label_Size.setForeground(Color.RED);
+		label_Size.setHorizontalAlignment(SwingConstants.CENTER);
+		label_Size.setVerticalAlignment(SwingConstants.TOP);
+		label_Size.setFont(new Font("Tahoma", Font.BOLD, 40));
+		label_Size.setOpaque(true);
+		label_Size.setBackground(Color.YELLOW);
+		label_Size.setBounds(226, 189, 230, 164);
+		panel_Infor.add(label_Size);
+
 		this.setVisible(true);
 	}
-	
+
 	public void BossAppear() {
 		try {
 			inforOfBossSend = new BossInfor();
@@ -159,18 +218,20 @@ public class BossView extends JFrame implements ActionListener {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void ResetAll() {
 		this.drawing.clearDrawing();
 		this.textField_Answer.setText("");
 	}
-	
+
 	public void actionPerformed(ActionEvent e) {
 		System.out.println("Đã nhấn P");
 		try {
 			inforOfBossSend = new BossInfor();
 			inforOfBossSend.setCorrectAnswer(this.textField_Answer.getText());
 			inforOfBossSend.setLines(this.drawing.getLines());
+			inforOfBossSend.setCurrentColor(this.currentColor);
+			inforOfBossSend.setCurrentStrokeSize(this.currentSize);
 
 			outputStream = new ObjectOutputStream(bossSocket.getOutputStream());
 			outputStream.writeObject(inforOfBossSend);
@@ -179,46 +240,59 @@ public class BossView extends JFrame implements ActionListener {
 			e1.printStackTrace();
 		}
 	}
-	
+
 	public void listenToServer() {
 		new Thread(() -> {
-				try {			
-					while (true) {
-						ObjectInputStream inputStream = new ObjectInputStream(bossSocket.getInputStream());
-						Object receivedData = inputStream.readObject();
-						if (receivedData instanceof PlayerInfor) {
-							System.out.println("Player send!");
-							PlayerInfor player = (PlayerInfor) receivedData;
-							System.out.println(player.getAnswerOfPlayer());
-							if (player.getAnswerOfPlayer().equals(textField_Answer.getText())) {
-								System.out.println("Người dùng nào đó đã đoán đúng đáp án!");
-								
-								ResetAll();
-								
-								try {
-									inforOfBossSend = new BossInfor();
-									inforOfBossSend.setCorrectAnswer(this.textField_Answer.getText());
-									inforOfBossSend.setLines(this.drawing.getLines());
+			try {
+				while (true) {
+					ObjectInputStream inputStream = new ObjectInputStream(bossSocket.getInputStream());
+					Object receivedData = inputStream.readObject();
+					if (receivedData instanceof PlayerInfor) {
+						System.out.println("Player send!");
+						PlayerInfor player = (PlayerInfor) receivedData;
+						System.out.println(player.getAnswerOfPlayer());
+						if (player.getAnswerOfPlayer().equals(textField_Answer.getText())) {
+							System.out.println("Người dùng nào đó đã đoán đúng đáp án!");
 
-									outputStream = new ObjectOutputStream(bossSocket.getOutputStream());
-									outputStream.writeObject(inforOfBossSend);
-									outputStream.flush();
-								} catch (Exception e1) {
-									e1.printStackTrace();
-								}
-								
-								JOptionPane.showMessageDialog(this,
-										"Đã có người chơi đoán đúng đáp án",
-										"CORRECT ANSWER", JOptionPane.INFORMATION_MESSAGE);
-								
-							} else {
-								System.out.println("Người dùng nào đó đã đoán sai đáp án!");
+							ResetAll();
+
+							try {
+								inforOfBossSend = new BossInfor();
+								inforOfBossSend.setCorrectAnswer(this.textField_Answer.getText());
+								inforOfBossSend.setLines(this.drawing.getLines());
+
+								outputStream = new ObjectOutputStream(bossSocket.getOutputStream());
+								outputStream.writeObject(inforOfBossSend);
+								outputStream.flush();
+							} catch (Exception e1) {
+								e1.printStackTrace();
 							}
-						} 			
+
+							JOptionPane.showMessageDialog(this, "Đã có người chơi đoán đúng đáp án", "CORRECT ANSWER",
+									JOptionPane.INFORMATION_MESSAGE);
+
+						} else {
+							System.out.println("Người dùng nào đó đã đoán sai đáp án!");
+						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}).start();
+	}
+
+	public void SetColor(int colorIndex) {
+		Color selectedColor = colors[colorIndex];
+		this.drawing.setCurrentColor(selectedColor);
+		this.drawing.repaint();
+		this.comboBox_Color.setForeground(selectedColor);
+		currentColor = selectedColor;
+	}
+
+	public void SetSize() {
+		this.drawing.setCurrentStrokeSize((float) comboBox_Size.getSelectedItem());
+		this.drawing.repaint();
+		currentSize = (float) comboBox_Size.getSelectedItem();
 	}
 }

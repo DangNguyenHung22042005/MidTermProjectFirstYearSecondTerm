@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <guessgame>
-   <player number="1">
-      <name>tu</name>
-      <peak>
-         <score>10</score>
-      </peak>
-   </player>
    <player number="0">
       <name>bo</name>
       <peak>
-         <score>20</score>
+         <score>30</score>
       </peak>
    </player>
 </guessgame>
